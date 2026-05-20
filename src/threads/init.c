@@ -94,6 +94,8 @@ main (void)
   printf ("Pintos booting with %'"PRIu32" kB RAM...\n",
           init_ram_pages * PGSIZE / 1024);
 
+  printf("Pintos Start!\n");
+
   /* Initialize memory system. */
   palloc_init (user_page_limit);
   malloc_init ();
