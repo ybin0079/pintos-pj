@@ -74,6 +74,9 @@ static void schedule (void);
 void thread_schedule_tail (struct thread *prev);
 static tid_t allocate_tid (void);
 
+/*과제 수정*/
+bool cmp_wakeup_time (const struct list_elem *a, const struct list_elem *b, void *aux);
+
 /* Initializes the threading system by transforming the code
    that's currently running into a thread.  This can't work in
    general and it is possible in this case only because loader.S
@@ -116,7 +119,7 @@ thread_sleep(int64_t ticks)
 
   if(curr != idle_thread){
     curr->wakeup_time = ticks;
-    list_push_back(&sleeping_thread, &curr->elem);
+    list_insert_ordered(&sleeping_thread, &curr->elem, cmp_wakeup_time, NULL);
     thread_block();
   }
 
@@ -131,13 +134,21 @@ thread_wakeup(int64_t current_tick)
     struct thread *t = list_entry(e, struct thread, elem);
 
     if (current_tick < t->wakeup_time){
-      e = list_next(e);
-      continue;
+      break;
     }
     
     e = list_remove(e);
     thread_unblock(t);
   }
+}
+
+bool
+cmp_wakeup_time (const struct list_elem *a, const struct list_elem *b, void *aux UNUSED)
+{
+  struct thread *ta = list_entry (a, struct thread, elem);
+  struct thread *tb = list_entry (b, struct thread, elem);
+  
+  return ta->wakeup_time < tb->wakeup_time;
 }
 
 /* Starts preemptive thread scheduling by enabling interrupts.
