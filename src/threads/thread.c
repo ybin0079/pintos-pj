@@ -129,21 +129,17 @@ thread_sleep(int64_t ticks)
 void
 thread_wakeup(int64_t current_tick)
 {
-  enum intr_level old_level = intr_disable(); 
-
+  // intr_disable/set_level 제거
   while (!list_empty(&sleeping_thread)) {
     struct list_elem *e = list_front(&sleeping_thread);
     struct thread *t = list_entry(e, struct thread, elem);
 
     if (current_tick < t->wakeup_time) break;
 
-    list_pop_front(&sleeping_thread); 
-    thread_unblock(t);               
+    list_pop_front(&sleeping_thread);
+    thread_unblock(t);
   }
-
-  intr_set_level(old_level);
 }
-
 bool
 cmp_wakeup_time (const struct list_elem *a, const struct list_elem *b, void *aux UNUSED)
 {
