@@ -20,6 +20,9 @@
    of thread.h for details. */
 #define THREAD_MAGIC 0xcd6abf4b
 
+/*과제 수정*/
+static struct list sleeping_thread;
+
 /* List of processes in THREAD_READY state, that is, processes
    that are ready to run but not actually running. */
 static struct list ready_list;
@@ -92,12 +95,49 @@ thread_init (void)
   lock_init (&tid_lock);
   list_init (&ready_list);
   list_init (&all_list);
+  list_init(&sleeping_thread);  /*과제 수정*/
 
   /* Set up a thread structure for the running thread. */
   initial_thread = running_thread ();
   init_thread (initial_thread, "main", PRI_DEFAULT);
   initial_thread->status = THREAD_RUNNING;
   initial_thread->tid = allocate_tid ();
+}
+
+/*과제 수정*/
+void
+thread_sleep(int64_t ticks)
+{
+  struct thread *curr;
+  curr = thread_current();
+
+  enum intr_level old_level;
+  old_level = intr_disable();
+
+  if(curr != idle_thread){
+    curr->wakeup_time = ticks;
+    list_push_back(&sleeping_thread, &curr->elem);
+    thread_block();
+  }
+
+  intr_set_level(old_level);
+}
+
+void
+thread_wakeup(int64_t current_tick)
+{
+  struct list_elem *e = list_begin(&sleeping_thread);
+  while (e != list_end(&sleeping_thread)){
+    struct thread *t = list_entry(e, struct thread, elem);
+
+    if (current_tick < t->wakeup_time){
+      e = list_next(e);
+      continue;
+    }
+    
+    e = list_remove(e);
+    thread_unblock(t);
+  }
 }
 
 /* Starts preemptive thread scheduling by enabling interrupts.
